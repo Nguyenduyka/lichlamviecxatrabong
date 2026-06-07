@@ -81,11 +81,11 @@ async function doLogin(){
     errEl.classList.add('show');return;
   }
   if(!/^[a-z0-9\-]+$/.test(tenXa)){
-    errEl.textContent='Tên đơn vị chỉ gồm chữ không dấu, số (vd: taytrabong)';
+    errEl.textContent='Tên đơn vị chỉ gồm chữ không dấu, số (vd: trabong)';
     errEl.classList.add('show');return;
   }
   // Tự ghép email ẩn — người dùng chỉ cần gõ tên ngắn
-  const email=tenXa+'@lichlamviectaytra.com.vn';
+  const email=tenXa+'@lichlamviectrabong.com.vn';
   const btn=document.getElementById('btnDoLogin');
   const ld=document.getElementById('loginLoading');
   if(btn){btn.disabled=true;btn.textContent='...';}
