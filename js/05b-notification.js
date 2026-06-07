@@ -552,9 +552,10 @@ async function sendFCMPush(count, msg, evId, evDate) {
   try {
     const newCount = count || events.filter(e => e.isNew && e.isNew > 0).length;
     const pushMsg = msg || ('📅 Lịch làm việc vừa được cập nhật');
+    const _pushTs = Date.now(); // dùng CHUNG cho push_trigger và GAS để chống gửi trùng
     // Ghi trigger vào Firebase — viewer listener sẽ nhận và hiện thông báo
     if (fbDb) {
-      const payload = {count: newCount, ts: Date.now(), msg: pushMsg, uid: currentUID || 'viewer'};
+      const payload = {count: newCount, ts: _pushTs, msg: pushMsg, uid: currentUID || 'viewer'};
       if(evId) payload.evId = evId;
       if(evDate) payload.evDate = evDate;
       fbDb.ref('push_trigger/latest').set(payload)
@@ -566,6 +567,7 @@ async function sendFCMPush(count, msg, evId, evDate) {
     // Gọi GAS push để gửi đến điện thoại (kể cả khi app đóng)
     if (GAS_PUSH_URL) {
       const gasUrl = GAS_PUSH_URL + '?action=push&count=' + newCount + '&msg=' + encodeURIComponent(pushMsg)
+        + '&ts=' + _pushTs
         + (evId ? ('&ev=' + encodeURIComponent(evId)) : '')
         + (evDate ? ('&d=' + encodeURIComponent(evDate)) : '');
       log('[Push] calling GAS:', gasUrl.slice(0,100)+'...');
