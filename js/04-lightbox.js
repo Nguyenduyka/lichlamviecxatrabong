@@ -43,9 +43,10 @@ function lbZoom(dir){
   var _panStartX=0, _panStartY=0, _panStartTx=0, _panStartTy=0;
   var _isPan=false;
   // Cờ phân biệt pinch / di chuyển với chạm-gõ (tap) để không reset nhầm khi nhả pinch
-  var _pinchedThisGesture=false, _tapMoved=false;
-  // Mốc thời gian lần phóng to gần nhất (gồm cả gesture iOS) — chặn double-tap giả khi nhả tay
-  var _lastPinchTs=0;
+  var _tapMoved=false;
+  // Theo dõi trong CẢ lượt chạm (từ lúc đặt ngón đầu đến khi nhả hết): số ngón tối đa
+  // và đã từng có gesture phóng to chưa. Dùng để biết chắc đây có phải tap đơn thuần không.
+  var _seqMaxTouches=0, _seqHadGesture=false;
 
   // Ngăn pull-to-refresh khi lightbox mở (iOS/Android)
   document.addEventListener('touchmove', function(e){
@@ -55,9 +56,9 @@ function lbZoom(dir){
   }, {passive:false});
 
   wrap.addEventListener('touchstart', function(e){
+    _seqMaxTouches = Math.max(_seqMaxTouches, e.touches.length);
     if(e.touches.length === 2){
       _isPinch = true; _isPan = false;
-      _pinchedThisGesture = true;
       _initD = Math.hypot(
         e.touches[0].clientX - e.touches[1].clientX,
         e.touches[0].clientY - e.touches[1].clientY
@@ -85,7 +86,6 @@ function lbZoom(dir){
         e.touches[0].clientY - e.touches[1].clientY
       );
       _lbScale = Math.max(.5, Math.min(5, _initS * (d / _initD)));
-      _lastPinchTs = Date.now();
       _applyZoom();
       e.preventDefault();
     } else if(_isPan && e.touches.length === 1 && _lbScale > 1){
@@ -105,11 +105,12 @@ function lbZoom(dir){
     if(e.touches.length === 0) _isPan  = false;
     if(_lbScale <= 1){ _lbTx=0; _lbTy=0; _applyZoom(); }
 
-    // Double-tap reset zoom — CHỈ khi đã nhả HẾT ngón, KHÔNG phải vừa kết thúc pinch,
-    // và không có di chuyển. Nhả 2 ngón pinch tạo ra 2 touchend liên tiếp <300ms,
-    // trước đây bị hiểu nhầm là double-tap nên zoom bị reset về như cũ.
+    // Double-tap reset zoom — CHỈ tính khi cả lượt chạm vừa rồi là 1 ngón đơn thuần:
+    // không lúc nào chạm 2 ngón, không có gesture phóng to (iOS), và không di chuyển.
+    // Nhờ vậy, nhả tay sau khi phóng to (dù giữ yên bao lâu) KHÔNG bị hiểu nhầm là double-tap.
     if(e.touches.length === 0){
-      if(!_pinchedThisGesture && !_tapMoved && (Date.now() - _lastPinchTs > 350)){
+      var _cleanTap = (_seqMaxTouches <= 1) && !_seqHadGesture && !_tapMoved;
+      if(_cleanTap){
         var now = Date.now();
         if(now - (wrap._lastTap||0) < 300){
           _lbScale=1; _lbTx=0; _lbTy=0; _applyZoom();
@@ -118,7 +119,8 @@ function lbZoom(dir){
           wrap._lastTap = now;
         }
       }
-      _pinchedThisGesture = false; // sẵn sàng cho lần chạm sau
+      // Reset cờ cho lượt chạm kế tiếp
+      _seqMaxTouches = 0; _seqHadGesture = false; _tapMoved = false;
     }
   });
 
@@ -127,18 +129,17 @@ function lbZoom(dir){
   wrap.addEventListener('gesturestart', function(e){
     e.preventDefault();
     _gestureStartScale = _lbScale;
-    _pinchedThisGesture = true;
-    _lastPinchTs = Date.now();
+    _seqHadGesture = true;
   }, {passive:false});
   wrap.addEventListener('gesturechange', function(e){
     e.preventDefault();
+    _seqHadGesture = true;
     _lbScale = Math.max(.5, Math.min(5, _gestureStartScale * e.scale));
-    _lastPinchTs = Date.now();
     _applyZoom();
   }, {passive:false});
   wrap.addEventListener('gestureend', function(e){
     e.preventDefault();
-    _lastPinchTs = Date.now();
+    _seqHadGesture = true;
     if(_lbScale <= 1){ _lbTx=0; _lbTy=0; _applyZoom(); }
   }, {passive:false});
 })();
