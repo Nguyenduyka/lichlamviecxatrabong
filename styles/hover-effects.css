@@ -1,0 +1,235 @@
+/* ============================================================
+   HIỆU ỨNG VIỀN NÉT ĐỨT CHẠY (marching ants) — chạy phải→trái
+   1) Admin desktop: nút "Thêm lịch sáng/chiều" (.add-hint) khi hover
+   2) Viewer mobile: dòng lịch (.vm-ev.hl) khi bấm từ thông báo
+   Nạp SAU main.css. Không sửa main.css.
+   ============================================================ */
+
+/* Thứ tự 4 lớp background ở các rule dưới: [trên, dưới, trái, phải].
+   Để nét đứt "chạy từ phải sang trái":
+   - viền trên & dưới (ngang): dịch background-position X về âm
+   - viền trái & phải (dọc): dịch Y để bò theo, tạo cảm giác xoay vòng. */
+
+/* Keyframe cho admin desktop (nét 16px) */
+@keyframes antsRunLeft {
+  to { background-position: -16px 0, -16px 100%, 0 -16px, 100% 16px; }
+}
+
+/* ===== 1) ADMIN DESKTOP — nút Thêm lịch sáng/chiều ===== */
+/* Chỉ áp desktop (>600px), khi hover vào ô .td-add */
+@media (min-width: 601px) {
+  /* Nội dung lịch và thời gian canh trái */
+  body.is-admin .td-aev.td-add { text-align: left; }
+  body.is-admin .td-aev.td-add .add-hint {
+    position: relative;
+    display: block !important;       /* Chiếm toàn bộ dòng */
+    width: 100% !important;          /* To bằng chiều rộng ô nhập lịch */
+    box-sizing: border-box;
+    margin: 8px 0;                  /* Tạo khoảng cách trên dưới */
+    border-radius: 8px;
+    padding: 8px 0;                 /* Padding trên dưới */
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+    color: var(--red);
+    background-color: rgba(192,57,43,.04);
+    text-align: center;             /* Chữ + Thêm nằm giữa dải ngang */
+    /* 4 viền nét đứt */
+    background-image:
+      repeating-linear-gradient(90deg,  var(--red) 0 8px, transparent 8px 16px),
+      repeating-linear-gradient(90deg,  var(--red) 0 8px, transparent 8px 16px),
+      repeating-linear-gradient(0deg,   var(--red) 0 8px, transparent 8px 16px),
+      repeating-linear-gradient(0deg,   var(--red) 0 8px, transparent 8px 16px);
+    background-size: 16px 2px, 16px 2px, 2px 16px, 2px 16px;
+    background-position: 0 0, 0 100%, 0 0, 100% 0;
+    background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+  }
+  /* Khi hover vào ô: hiện nút + chạy viền */
+  body.is-admin .td-aev.td-add:hover .add-hint {
+    animation: antsRunLeft .6s linear infinite;
+  }
+}
+
+/* ===== 2) VIEWER MOBILE — dòng lịch highlight khi bấm từ thông báo ===== */
+/* LƯU Ý: keyframe vmHl trong main.css dùng `background:` (shorthand) sẽ ghi đè
+   background-image (viền nét đứt). Vì vậy ở đây KHÔNG dùng lại vmHl mà dùng
+   keyframe hlBgBlink dùng `background-color` (chỉ đổi màu nền, giữ nguyên viền).
+   hover-effects.css nạp SAU main.css nên rule này thắng. */
+@media (max-width: 600px) {
+  .vm-ev.hl {
+    position: relative;
+    border-radius: 10px;
+    padding: 9px 10px;
+    /* 4 viền nét đứt quanh dòng lịch (cố định, không bị shorthand xóa) */
+    background-image:
+      repeating-linear-gradient(90deg, var(--red) 0 9px, transparent 9px 18px),
+      repeating-linear-gradient(90deg, var(--red) 0 9px, transparent 9px 18px),
+      repeating-linear-gradient(0deg,  var(--red) 0 9px, transparent 9px 18px),
+      repeating-linear-gradient(0deg,  var(--red) 0 9px, transparent 9px 18px);
+    background-size: 18px 2px, 18px 2px, 2px 18px, 2px 18px;
+    background-position: 0 0, 0 100%, 0 0, 100% 0;
+    background-repeat: repeat-x, repeat-x, repeat-y, repeat-y;
+    /* Gộp: nhấp nháy NỀN (background-color) + viền chạy phải→trái */
+    animation: hlBgBlink 5s ease forwards, antsRunMobile .6s linear infinite;
+  }
+}
+/* Nhấp nháy nền bằng background-color (không phải shorthand → không xóa viền) */
+@keyframes hlBgBlink {
+  0%,15%,30%,45%,60% { background-color: rgba(192,57,43,.12); }
+  7%,22%,37%,52%     { background-color: transparent; }
+  75%,100%           { background-color: transparent; }
+}
+/* Keyframe riêng cho mobile (kích thước nét 18px) — chạy phải→trái */
+@keyframes antsRunMobile {
+  to { background-position: -18px 0, -18px 100%, 0 -18px, 100% 18px; }
+}
+
+/* ============================================================
+   NÚT THỜI TIẾT MOBILE — bấm hiện panel chi tiết, bấm lại thu
+   + Phóng to chữ SÁNG/CHIỀU và thời gian cho dễ nhìn
+   ============================================================ */
+@media (max-width: 600px) {
+
+  /* Hộp cha của nút không được cắt nội dung (nếu không số nhiệt độ bị mất) */
+  .hdr-right { overflow: visible !important; min-width: 0; }
+
+  /* Nút thời tiết trên header (icon + nhiệt độ + mũi tên) */
+  #vsWx {
+    position: relative;
+    overflow: visible !important;   /* không cắt số nhiệt độ */
+    max-width: none !important;     /* main.css ép max-width nhỏ → bỏ */
+    width: auto !important;
+    flex-shrink: 0 !important;      /* không co lại chỉ còn icon */
+    background: rgba(0,0,0,.18) !important;
+    border: 1px solid rgba(255,255,255,.15) !important;
+    border-radius: 8px !important;
+    padding: 4px 9px !important;
+  }
+  #vsWx .wx-mini-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: transparent; border: none; cursor: pointer;
+    color: #fff; font-family: inherit; padding: 0;
+    white-space: nowrap;            /* icon + số nằm trên 1 dòng, không xuống dòng */
+    -webkit-tap-highlight-color: transparent;
+  }
+  #vsWx .wx-mini-btn .wx-ico { font-size: 17px; line-height: 1; flex-shrink: 0; }
+  #vsWx .wx-mini-btn .wx-temp {
+    font-size: 14px; font-weight: 800; color: #fff;
+    flex-shrink: 0;                 /* số không bị co/ẩn */
+    display: inline-block !important;
+  }
+  #vsWx .wx-mini-btn .wx-caret {
+    font-size: 10px; opacity: .8; transition: transform .25s; margin-left: 1px; flex-shrink: 0;
+  }
+  #vsWx.wx-open .wx-mini-btn .wx-caret { transform: rotate(180deg); }
+
+  /* Panel chi tiết — dùng position:fixed để KHÔNG bị overflow:hidden của header cắt.
+     Định vị theo màn hình: ngay dưới header, sát mép phải. */
+  #vsWx .wx-panel {
+    position: fixed;
+    top: calc(env(safe-area-inset-top, 0px) + 58px);  /* ngay dưới header mobile */
+    right: 10px;
+    z-index: 100000;
+    width: 250px; max-width: calc(100vw - 20px);
+    background: #fff; color: var(--ink);
+    border-radius: 12px; padding: 12px 14px;
+    box-shadow: 0 8px 28px rgba(0,0,0,.28);
+    border: 1px solid var(--line);
+    opacity: 0; transform: translateY(-6px) scale(.98);
+    pointer-events: none; transition: opacity .2s, transform .2s;
+  }
+  #vsWx.wx-open .wx-panel {
+    opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+  }
+  /* mũi tên nhỏ chỉ lên nút */
+  #vsWx .wx-panel::before {
+    content: ""; position: absolute; top: -6px; right: 22px;
+    width: 12px; height: 12px; background: #fff;
+    border-left: 1px solid var(--line); border-top: 1px solid var(--line);
+    transform: rotate(45deg);
+  }
+  .wxp-hd { padding-bottom: 8px; margin-bottom: 8px; border-bottom: 1px solid var(--line2); }
+  .wxp-loc { font-size: 14px; font-weight: 800; color: var(--ink); }
+  .wxp-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 6px 0; font-size: 13px; color: var(--muted);
+  }
+  .wxp-row .wxp-i { font-size: 15px; flex-shrink: 0; width: 20px; text-align: center; }
+  .wxp-row .wxp-l { flex-shrink: 0; }
+  .wxp-row .wxp-v { margin-left: auto; color: var(--ink); }
+  .wxp-row .wxp-v b { font-weight: 800; }
+
+  /* Phóng to chữ SÁNG/CHIỀU (nhãn buổi) trong thẻ ngày mobile */
+  .vs-card-list .vdc-ses-lbl {
+    font-size: 13.5px !important;
+    font-weight: 900 !important;
+    padding: 11px 0 6px !important;
+  }
+  /* Phóng to dòng thời gian (08:00, 14:00...) của từng lịch */
+  .vs-card-list .vm-t {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+  }
+}
+
+/* ============================================================
+   CĂN GIỮA SPINNER trên MOBILE và chế độ TV (nơi từng bị lệch góc).
+   KHÔNG áp cho desktop thường — desktop vốn hiển thị đúng.
+   ============================================================ */
+@media (max-width: 600px) {
+  .vs-body:has(#vsLoadingSpinner),
+  .vs-tbl-outer:has(#vsLoadingSpinner){
+    min-height: 240px;
+    position: relative;
+  }
+}
+body.is-tv-viewer .vs-tbl-outer:has(#vsLoadingSpinner){
+  flex: 1 1 auto; min-height: 0; height: 100%;
+  display: flex; position: relative;
+}
+/* Spinner: CHỈ căn giữa cho mobile và chế độ TV-viewer (nơi từng bị lệch góc).
+   KHÔNG đụng tới spinner desktop thường — desktop vốn hiển thị đúng, ép thêm
+   chỉ gây lỗi (spinner chiếm cả vùng, đẩy lịch xuống, nhìn như kẹt). */
+@media (max-width: 600px) {
+  #vsLoadingSpinnerMob{
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    text-align: center; min-height: 240px; width: 100%;
+  }
+}
+body.is-tv-viewer #vsLoadingSpinner{
+  position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center;
+}
+
+/* ============================================================
+   CHỐNG CHỒNG LỚP giao diện trên mobile
+   Triệu chứng: cả bảng-cột (desktop) lẫn thẻ-ngày (mobile) cùng hiện,
+   đè lên nhau (khi CSS layout chưa áp dụng kịp).
+   → Ép rõ ràng: mobile CHỈ hiện thẻ-ngày, ẩn hẳn bảng-cột.
+   ============================================================ */
+@media (max-width: 600px) {
+  /* Ẩn triệt để bảng dạng cột của viewer trên mobile */
+  #viewerScreen .vs-body,
+  #viewerScreen .vs-thead-fixed,
+  #viewerScreen .vs-tbl-outer,
+  #viewerScreen .vs-footer-desktop { display: none !important; }
+  /* Chỉ hiện danh sách thẻ ngày */
+  #viewerScreen .vs-card-list { display: block !important; }
+}
+/* Error box khi không tải được lịch */
+.load-error-box{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; gap:10px; padding:30px 22px; max-width:340px; margin:0 auto;
+}
+.load-error-box .le-ico{ font-size:42px; }
+.load-error-box .le-title{ font-size:16px; font-weight:800; color:var(--red2,#8c1812); }
+.load-error-box .le-desc{ font-size:13px; color:var(--muted,#7a6f65); line-height:1.5; }
+.load-error-box .le-btn{
+  margin-top:6px; padding:11px 26px; border:none; border-radius:24px;
+  background:linear-gradient(135deg,#8c1812,#c0392b); color:#fff;
+  font-size:14px; font-weight:800; cursor:pointer; font-family:inherit;
+  box-shadow:0 4px 14px rgba(192,57,43,.3);
+}
+.load-error-box .le-btn:active{ transform:translateY(1px); }
