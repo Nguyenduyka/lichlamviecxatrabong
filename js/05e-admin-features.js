@@ -572,8 +572,9 @@ function handleFiles(files){
   }));
 
   document.getElementById('fileIn').value='';
-  // AI đọc file gốc song song
-  if(typeof aiReadFiles==='function') aiReadFiles(filesArr);
+  // AI đọc file gốc song song — CHỈ khi TẠO MỚI lịch.
+  // Khi đang SỬA lịch (editId đã có) thì nội dung đã đầy đủ rồi nên không cần AI đọc lại giấy mời.
+  if(typeof aiReadFiles==='function' && !editId) aiReadFiles(filesArr);
 }
 // Drag-drop file zone (safe - chỉ gắn nếu element tồn tại)
 function initFdz(){
@@ -590,6 +591,42 @@ function renderAttach(){
       :'✅ '+esc(f.name.split('.').pop().toUpperCase());
     return `<div class="aitem"><span style="font-size:14px">${fIcon(f.type)}</span><span class="an">${esc(f.name)}</span><span class="at">${esc(statusTxt)}</span><button class="adel" onclick="pending.splice(${i},1);renderAttach()">✕</button></div>`;
   }).join('');
+  if(typeof updateAiManualBtn==='function') updateAiManualBtn();
+}
+
+// Hiện nút "Cho AI đọc giấy mời" — CHỈ khi đang SỬA lịch và có file đính kèm AI đọc được.
+// (Khi tạo mới, AI đã tự đọc nên không cần nút này.)
+function updateAiManualBtn(){
+  const btn=document.getElementById('aiManualBtn');
+  if(!btn) return;
+  let hasFile=false;
+  try{
+    hasFile=pending.some(p=>/\.(pdf|jpe?g|png|gif|webp|bmp|tiff?|docx?|xlsx?|txt|csv|md)$/i.test((p&&p.name)||''));
+  }catch(e){}
+  btn.style.display=(editId && hasFile)?'inline-block':'none';
+}
+
+// Bấm nút: gom các file đính kèm (file mới có _file, file cũ tải từ URL) rồi cho AI đọc.
+async function aiReadAttachedManually(){
+  const btn=document.getElementById('aiManualBtn');
+  if(btn){ btn.disabled=true; btn.textContent='⏳ Đang chuẩn bị...'; }
+  try{
+    const arr=[];
+    for(const it of pending){
+      if(it && it._file){ arr.push(it._file); }
+      else if(it && it.url){
+        try{
+          const resp=await fetch(it.url);
+          const blob=await resp.blob();
+          arr.push(new File([blob], it.name||'giaymoi', {type:it.type||blob.type||''}));
+        }catch(e){}
+      }
+    }
+    if(!arr.length){ alert('Chưa có file đính kèm để AI đọc.'); return; }
+    if(typeof aiReadFiles==='function') aiReadFiles(arr);
+  } finally {
+    if(btn){ btn.disabled=false; btn.textContent='✨ Cho AI đọc giấy mời'; }
+  }
 }
 function openFile(f){
   // Hỗ trợ cả file mới (url Storage) lẫn file cũ (dataUrl base64)
