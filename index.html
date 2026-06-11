@@ -570,6 +570,7 @@
         <label>📎 File đi kèm (giấy mời, hình ảnh...)</label>
         <div class="alist" id="attachList"></div>
         <label class="fdrop" id="fdz"><input type="file" id="fileIn" multiple accept=".pdf,.jpg,.jpeg,.png,.gif,.webp,.doc,.docx,.xls,.xlsx" onchange="handleFiles(this.files)">🖱️ Click chọn file hoặc kéo thả — PDF, Word, Excel, Ảnh</label>
+        <button type="button" id="aiManualBtn" onclick="aiReadAttachedManually()" style="display:none;margin-top:7px;padding:7px 12px;border-radius:8px;border:1.5px solid #c2d8f5;background:#eef4ff;color:#1a4f7a;font-size:12px;font-weight:700;cursor:pointer;font-family:'Be Vietnam Pro',sans-serif;">✨ Cho AI đọc giấy mời</button>
         <div id="aiReadBar" style="display:none;margin-top:7px;align-items:center;gap:8px;padding:8px 12px;background:linear-gradient(135deg,#eef4ff,#f0f6ff);border:1.5px solid #c2d8f5;border-radius:9px;">
           <span id="aiReadIco" style="font-size:18px">🤖</span>
           <span id="aiReadMsg" style="font-size:12px;font-weight:600;color:#1a4f7a;flex:1"></span>
